@@ -36,7 +36,7 @@ parser = argparse.ArgumentParser() # Argumentu is cmd nuskaitymas
 parser.add_argument('-i', '--input', help = 'csv failo lokacija')
 parser.add_argument('-c', '--compare', help = 'lyginamo failo lokacija')
 parser.add_argument('-o', '--output', help = 'ataskaitos failo lokacija')
-parser.add_argument('--sort', help = "Nurodoma, jei norima sortint kazkuriuo")
+parser.add_argument('-s', '--sort', help = "Nurodoma, jei norima sortint kazkuriuo")
 
 args = parser.parse_args() # Tikrinam, ar ivestas palyginimamas .csv failas
 if args.input:
