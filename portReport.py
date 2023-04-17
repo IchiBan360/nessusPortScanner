@@ -65,9 +65,9 @@ else:
     print('Nenurodytas csv failas')
     exit(1)
 if args.output: # Tikrinama, ar nurodyta .csv pasikeitimu ataskaitos direktorija
-    csvOutDir = args.output
-    if not os.path.exists(csvOutDir):
-        print('Raporto failo saugojimo direktorija neegzistuoja')
+    csvOutDir = os.path.join(args.output, 'nessusAtaskaita.csv')
+    if not os.path.exists(args.output):
+        print('Raporto failo saugojimo direktorija neegzistuoja, arba failas nesibaigia .csv formatu')
         exit(1)
 else:
     csvOutDir = './nessusAtaskaita.csv' # Default direktorija
@@ -121,7 +121,7 @@ if len(changedPorts): # Tikrinam, ar isvis yra pakeistu portu
             else:
                 print('{:20}{}'.format(row[0], row[1]))
                 line_count += 1
-        print('\nRasta {} pasikeitusiu portu.'.format(line_count))
+        print('\nRasta {} pasikeitusiu portu.'.format(line_count - 1))
 else:
     print("Nebuvo rasta pasikeitusiu portu")
 
