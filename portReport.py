@@ -30,7 +30,6 @@ def readCsv(dir):
             print('Netinkamas csv failo stulpeliu skirtukas!')
             exit(1)
 
-
     return (portList) # Grazina atrusiuotus pagal id ip adresus ir ju portus
 
 # Port pasikeitimu lyginimas
@@ -61,23 +60,29 @@ if args.input:
     if not os.path.exists(csvDir):
         print('csv failas neegzistuoja')
         exit(1)
+    if not str(csvDir).endswith('.csv'):
+        print('Reikia nurodyti csv faila')
+        exit(1)
 else:
     print('Nenurodytas csv failas')
     exit(1)
 if args.output: # Tikrinama, ar nurodyta .csv pasikeitimu ataskaitos direktorija
-    csvOutDir = os.path.join(args.output, 'nessusAtaskaita.csv')
+    csvOutDir = os.path.join(args.output, 'portAtaskaita.csv')
     if not os.path.exists(args.output):
-        print('Raporto failo saugojimo direktorija neegzistuoja, arba failas nesibaigia .csv formatu')
+        print('Raporto failo saugojimo direktorija neegzistuoja')
         exit(1)
 else:
-    csvOutDir = './nessusAtaskaita.csv' # Default direktorija
+    csvOutDir = './portAtaskaita.csv' # Default direktorija
 if args.compare: # Tikrinama, ar duodamas .csv failas su kuriuo lyginti ataskaita
     csvDirOld = args.compare
     if not os.path.exists(csvDirOld):
         print('lyginamas csv failas neegzistuoja')
         exit(1)
+    if not str(csvDirOld).endswith('.csv'):
+        print('Reikia nurodyti csv faila')
+        exit(1)
 else:
-    csvDirOld = './nessusAtaskaita.csv' # Jei neduota, lygina su pries tai atlikta palyginimo ataskaita\
+    csvDirOld = './portAtaskaita.csv' # Jei neduota, lygina su pries tai atlikta palyginimo ataskaita\
     if not os.path.exists(csvDirOld):
         print('nessus ataskaita nebuvo rasta programos direktorijoje, butina nurodyti atliktos ataskaitos faila')
         exit(1)
