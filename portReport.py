@@ -1,6 +1,7 @@
 import argparse
 import csv
 import os
+import sys
 
 # csv failu skaitymo metodas
 
@@ -36,12 +37,15 @@ def readCsv(dir):
 
 def comparePorts():
     changedPorts = {}
-    for key, value in portDict.items():
-        for keyOld, valueOld in portDictOld.items():
-            if key == keyOld: # ieskom vienodu ip adresu
-                if not str(value).split(',')[0] == str(valueOld).split(',')[0]: # tikrinam, ar pasikeite portas ar ne
-                    changedPorts[key] = str(valueOld).split(',')[0] + ',' + str(value).split(',')[0]
-
+    if not compare: # Tikrinam ar yra lyginamas failas
+        for key, value in portDict.items(): # Jei lyginamas failas nenurodytas, tiesiog agreguojam .csv faila
+            changedPorts[key] = str(value).split(',')[0]
+    else:
+        for key, value in portDict.items(): # Jei lyginamas failas nurodytas, lyginam ip adresu portus.
+            for keyOld, valueOld in portDictOld.items():
+                if key == keyOld: # ieskom vienodu ip adresu
+                    if not str(value).split(',')[0] == str(valueOld).split(',')[0]: # tikrinam, ar pasikeite portas ar ne
+                        changedPorts[key] = str(valueOld).split(',')[0] + ',' + str(value).split(',')[0]
 
     return changedPorts # Grazina pasikeitusiu portu sarasa
 
@@ -49,10 +53,10 @@ print('\nNessus ataskaitos apdorojimo programa\n')
 
 parser = argparse.ArgumentParser() # Argumentu is cmd nuskaitymas
 
-parser.add_argument('-i', '--input', help = 'csv failo lokacija')
-parser.add_argument('-c', '--compare', help = 'lyginamo failo lokacija')
-parser.add_argument('-o', '--output', help = 'ataskaitos failo lokacija')
-parser.add_argument('-s', '--sort', help = "Nurodoma, jei norima sortint kazkuriuo")
+parser.add_argument('-i', '--input', help = 'Csv failo lokacija, nurodoma tiksli .csv failo direktorija')
+parser.add_argument('-c', '--compare', help = 'Lyginamo failo lokacija, nurodoma tiksli lyginamo .csv failo direktorija')
+parser.add_argument('-o', '--output', help = 'Ataskaitos failo lokacija, nurodomas tikli .csv failo lokacija. Nenorodzius lokacijos rezultatai spausdinami i stdout')
+parser.add_argument('-s', '--sort', help = "Nurodoma, jei norima sortint kazkuriuo budu. ip-desc ip-asc = rikiavimas pagal ip, port-desc port-asc = rikiavimas pagal port")
 
 args = parser.parse_args() # Tikrinam, ar ivestas palyginimamas .csv failas
 if args.input:
@@ -66,13 +70,15 @@ if args.input:
 else:
     print('Nenurodytas csv failas')
     exit(1)
+output = True
 if args.output: # Tikrinama, ar nurodyta .csv pasikeitimu ataskaitos direktorija
-    csvOutDir = os.path.join(args.output, 'portAtaskaita.csv')
-    if not os.path.exists(args.output):
-        print('Raporto failo saugojimo direktorija neegzistuoja')
+    csvOutDir = args.output
+    if not str(csvOutDir).endswith('.csv'):
+        print('Raporto failo saugojimo direktorija neegzistuoja, arba nera nurodytas .csv formato failas')
         exit(1)
 else:
-    csvOutDir = './portAtaskaita.csv' # Default direktorija
+    output = False # Spausdinsim i stdout
+compare = True
 if args.compare: # Tikrinama, ar duodamas .csv failas su kuriuo lyginti ataskaita
     csvDirOld = args.compare
     if not os.path.exists(csvDirOld):
@@ -82,14 +88,11 @@ if args.compare: # Tikrinama, ar duodamas .csv failas su kuriuo lyginti ataskait
         print('Reikia nurodyti csv faila')
         exit(1)
 else:
-    csvDirOld = './portAtaskaita.csv' # Jei neduota, lygina su pries tai atlikta palyginimo ataskaita\
-    if not os.path.exists(csvDirOld):
-        print('nessus ataskaita nebuvo rasta programos direktorijoje, butina nurodyti atliktos ataskaitos faila')
-        exit(1)
-
+    compare = False
 
 portDict = readCsv(csvDir) # .csv failu nuskaitymas
-portDictOld = readCsv(csvDirOld)
+if compare:
+    portDictOld = readCsv(csvDirOld)
 changedPorts = comparePorts() # Nuskaitytu ip adresu port pasikeitimu lyginimas
 
 if args.sort: # Rikiavimo pasirinkimai, pagal ip, port, zemejancia aukstejancia tvarka
@@ -105,16 +108,25 @@ if args.sort: # Rikiavimo pasirinkimai, pagal ip, port, zemejancia aukstejancia 
 csv_columns = ['IP address', 'port']
 
 # Ataskaitos failo sukurimas
-
-with open(csvOutDir, 'w') as csvFile:
-    writer = csv.writer(csvFile, delimiter='|')
-    writer.writerow(['Ip address', 'port'])
-    for key, value in changedPorts.items():
-        writer.writerow([key, value])
+if len(changedPorts):
+    if not output: # Jei nenurodyta output direktorija rasom tiesiai i stdout
+        stdoutWritter = csv.writer(sys.stdout, delimiter='|')
+        stdoutWritter.writerow(['Ip address', 'port'])
+        for key,value in changedPorts.items():
+            stdoutWritter.writerow([key, value])
+    else: # Jei nurodyta rasom i nurodyta faila
+        with open(csvOutDir, 'w') as csvFile:
+            writer = csv.writer(csvFile, delimiter='|')
+            writer.writerow(['Ip address', 'port'])
+            for key, value in changedPorts.items():
+                writer.writerow([key, value])
+else:
+    print('Nebuvo rasta pasikeitusiu portu')
+    exit(0)
 
 # Ataskaitos failo nuskaitymas ir rezultatu atvaizda svimas
 
-if len(changedPorts): # Tikrinam, ar isvis yra pakeistu portu
+if output: 
     with open(csvOutDir) as csv_file: 
         csv_reader = csv.reader(csv_file, delimiter='|')
         line_count = 0
@@ -127,6 +139,5 @@ if len(changedPorts): # Tikrinam, ar isvis yra pakeistu portu
                 print('{:20}{}'.format(row[0], row[1]))
                 line_count += 1
         print('\nRasta {} pasikeitusiu portu.'.format(line_count - 1))
-else:
-    print("Nebuvo rasta pasikeitusiu portu")
+
 
