@@ -55,8 +55,8 @@ parser = argparse.ArgumentParser() # Argumentu is cmd nuskaitymas
 
 parser.add_argument('-i', '--input', help = 'Csv failo lokacija, nurodoma tiksli .csv failo direktorija')
 parser.add_argument('-c', '--compare', help = 'Lyginamo failo lokacija, nurodoma tiksli lyginamo .csv failo direktorija')
-parser.add_argument('-o', '--output', help = 'Ataskaitos failo lokacija, nurodomas tikli .csv failo lokacija. Nenorodzius lokacijos rezultatai spausdinami i stdout')
-parser.add_argument('-s', '--sort', help = "Nurodoma, jei norima sortint kazkuriuo budu. ip-desc ip-asc = rikiavimas pagal ip, port-desc port-asc = rikiavimas pagal port")
+parser.add_argument('-o', '--output', help = 'Ataskaitos failo lokacija, nurodomas tiksli .csv failo lokacija. Nenurodzius lokacijos rezultatai spausdinami i stdout')
+parser.add_argument('-s', '--sort', help = "Nurodoma, jei norima rikiuoti kazkuriuo budu. ip-desc ip-asc = rikiavimas pagal ip, port-desc port-asc = rikiavimas pagal port")
 
 args = parser.parse_args() # Tikrinam, ar ivestas palyginimamas .csv failas
 if args.input:
