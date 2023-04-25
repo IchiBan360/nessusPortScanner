@@ -2,6 +2,7 @@ import argparse
 import csv
 import os
 import sys
+from collections import defaultdict
 
 # csv failu skaitymo metodas
 
@@ -9,16 +10,17 @@ def readCsv(dir):
     with open (dir, 'r') as csvFile:
         delimiter = str(csv.Sniffer().sniff(csvFile.readline(),delimiters=[',','|']).delimiter)
         # tikrinam koks yra csv failo stulpeliu skirtukas
-    portList = {}
-    with open(dir) as csv_file:
+    portdict = defaultdict(list)
+    with open(dir, 'r') as csv_file:
         if delimiter == ',': # kablelis reiskia paduodama nessus ataskaita
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
             for row in csv_reader:
                 if line_count == 0: # Praleidziam pirma eilute
                     line_count += 1
-                elif (row[0] == '11219' or row[0] == '166602'): # tikrinam, ar atitinka ID
-                    portList[row[4]]= row[5] + '/' + row[6] # jei tinka, pasiimam ip adresa ir port
+                elif (row[6] != '0'):
+                    portdict[row[4]].append(row[5] + '/' + row[6])
+                   
         elif delimiter == '|': # vertikalus bruksnys reiskia senos portu ataskaitos faila
             csv_reader = csv.reader(csv_file, delimiter='|')
             line_count = 0
@@ -26,26 +28,32 @@ def readCsv(dir):
                 if line_count == 0: # Praleidziam pirma eilute
                     line_count += 1
                 else: 
-                    portList[row[0]]= row[1] # filtravimas nereikalingas
+                    portdict[row[0]] = row[1].split(',') # filtravimas nereikalingas
         else:
             print('Netinkamas csv failo stulpeliu skirtukas!')
             exit(1)
 
-    return (portList) # Grazina atrusiuotus pagal id ip adresus ir ju portus
+    return (portdict) # Grazina atrusiuotus pagal id ip adresus ir ju portus
 
 # Port pasikeitimu lyginimas
 
 def comparePorts():
-    changedPorts = {}
+
+    changedPorts = defaultdict(list)
     if not compare: # Tikrinam ar yra lyginamas failas
         for key, value in portDict.items(): # Jei lyginamas failas nenurodytas, tiesiog agreguojam .csv faila
-            changedPorts[key] = str(value).split(',')[0]
+            ports = set(list(value))
+            for item in ports:
+                changedPorts[key].append(item)
     else:
         for key, value in portDict.items(): # Jei lyginamas failas nurodytas, lyginam ip adresu portus.
             for keyOld, valueOld in portDictOld.items():
                 if key == keyOld: # ieskom vienodu ip adresu
-                    if not str(value).split(',')[0] == str(valueOld).split(',')[0]: # tikrinam, ar pasikeite portas ar ne
-                        changedPorts[key] = str(valueOld).split(',')[0] + ',' + str(value).split(',')[0]
+                    portList = list(set(value)) # Prafiltruojami pasikartojantys port
+                    portListOld = list(set(valueOld))
+                    diff = [item for item in portListOld if item not in portList] # Tikrinami port sarasu skirtumai
+                    for item in diff:
+                        changedPorts[key].append(item) # sudedam naujai atsiradusius portus
 
     return changedPorts # Grazina pasikeitusiu portu sarasa
 
@@ -74,7 +82,7 @@ output = True
 if args.output: # Tikrinama, ar nurodyta .csv pasikeitimu ataskaitos direktorija
     csvOutDir = args.output
     if not str(csvOutDir).endswith('.csv'):
-        print('Raporto failo saugojimo direktorija neegzistuoja, arba nera nurodytas .csv formato failas')
+        print('Nenurodytas .csv formato failas')
         exit(1)
 else:
     output = False # Spausdinsim i stdout
@@ -113,13 +121,13 @@ if len(changedPorts):
         stdoutWritter = csv.writer(sys.stdout, delimiter='|')
         stdoutWritter.writerow(['Ip address', 'port'])
         for key,value in changedPorts.items():
-            stdoutWritter.writerow([key, value])
+            stdoutWritter.writerow([key, ','.join(value)])
     else: # Jei nurodyta rasom i nurodyta faila
         with open(csvOutDir, 'w') as csvFile:
             writer = csv.writer(csvFile, delimiter='|')
             writer.writerow(['Ip address', 'port'])
             for key, value in changedPorts.items():
-                writer.writerow([key, value])
+                writer.writerow([key, ','.join(value)])
 else:
     print('Nebuvo rasta pasikeitusiu portu')
     exit(0)
@@ -130,14 +138,18 @@ if output:
     with open(csvOutDir) as csv_file: 
         csv_reader = csv.reader(csv_file, delimiter='|')
         line_count = 0
+        port_count = 0
         for row in csv_reader:
             if line_count == 0:
                 line_count += 1
-                print('{:20}{},buves port'.format(row[0], row[1]))
+                print('{:20}{}'.format(row[0], row[1]))
                 print('----------------------------------')
             else:
                 print('{:20}{}'.format(row[0], row[1]))
                 line_count += 1
-        print('\nRasta {} pasikeitusiu portu.'.format(line_count - 1))
-
+                port_count += len(str(row[1]).split(sep=','))
+        if compare:
+            print('\nRasta {} pasikeitusiu portu.'.format(port_count))
+        else:
+            print('\nRasta {} atidarytu portu.'.format(port_count))
 
