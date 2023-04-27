@@ -20,7 +20,6 @@ def readCsv(dir):
                     line_count += 1
                 elif (row[6] != '0'):
                     portdict[row[4]].append(row[5] + '/' + row[6])
-                   
         elif delimiter == '|': # vertikalus bruksnys reiskia senos portu ataskaitos faila
             csv_reader = csv.reader(csv_file, delimiter='|')
             line_count = 0
@@ -38,7 +37,6 @@ def readCsv(dir):
 # Port pasikeitimu lyginimas
 
 def comparePorts():
-
     changedPorts = defaultdict(list)
     if not compare: # Tikrinam ar yra lyginamas failas
         for key, value in portDict.items(): # Jei lyginamas failas nenurodytas, tiesiog agreguojam .csv faila
@@ -46,15 +44,20 @@ def comparePorts():
             for item in ports:
                 changedPorts[key].append(item)
     else:
+
         for key, value in portDict.items(): # Jei lyginamas failas nurodytas, lyginam ip adresu portus.
             for keyOld, valueOld in portDictOld.items():
                 if key == keyOld: # ieskom vienodu ip adresu
                     portList = list(set(value)) # Prafiltruojami pasikartojantys port
                     portListOld = list(set(valueOld))
-                    diff = [item for item in portListOld if item not in portList] # Tikrinami port sarasu skirtumai
+                    diff = [item for item in portList if item not in portListOld] # Tikrinami port sarasu skirtumai
                     for item in diff:
                         changedPorts[key].append(item) # sudedam naujai atsiradusius portus
-
+            if key not in portDictOld.keys(): # Tikrinam ar ip adresas pries tai isvis egzistavo
+                portList = list(set(value))
+                for item in portList:
+                    changedPorts[key].append(item) # Jei neegzistavo, reiskia atsidare nauji portai ant to ip
+              
     return changedPorts # Grazina pasikeitusiu portu sarasa
 
 print('\nNessus ataskaitos apdorojimo programa\n')
